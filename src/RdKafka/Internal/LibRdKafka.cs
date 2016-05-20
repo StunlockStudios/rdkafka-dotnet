@@ -19,6 +19,8 @@ namespace RdKafka.Internal
 #if NET451
             var is64 = IntPtr.Size == 8;
             try {
+                LoadLibrary(is64 ? "x64/libeay32.dll" : "x86/libeay32.dll");
+                LoadLibrary(is64 ? "x64/ssleay32.dll" : "x86/ssleay32.dll");
                 LoadLibrary(is64 ? "x64/zlib.dll" : "x86/zlib.dll");
                 LoadLibrary(is64 ? "x64/librdkafka.dll" : "x86/librdkafka.dll");
             }
@@ -378,14 +380,14 @@ namespace RdKafka.Internal
         internal static ErrorCode position(IntPtr rk, IntPtr partitions, IntPtr timeout_ms)
             => _position(rk, partitions, timeout_ms);
 
-        private static Func<IntPtr, int, IntPtr, byte[], UIntPtr, byte[], UIntPtr,
+        private static Func<IntPtr, int, IntPtr, IntPtr/*payload*/, UIntPtr/*payload length*/, IntPtr/*key*/, UIntPtr/*key length*/,
                 IntPtr, IntPtr> _produce;
         internal static IntPtr produce(
                 IntPtr rkt,
                 int partition,
                 IntPtr msgflags,
-                byte[] payload, UIntPtr len,
-                byte[] key, UIntPtr keylen,
+                IntPtr payload, UIntPtr len,
+                IntPtr key, UIntPtr keylen,
                 IntPtr msg_opaque)
             => _produce(rkt, partition, msgflags, payload, len, key, keylen, msg_opaque);
 
@@ -631,8 +633,8 @@ namespace RdKafka.Internal
                     IntPtr rkt,
                     int partition,
                     IntPtr msgflags,
-                    byte[] payload, UIntPtr len,
-                    byte[] key, UIntPtr keylen,
+                    IntPtr payload, UIntPtr len,
+                    IntPtr key, UIntPtr keylen,
                     IntPtr msg_opaque);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -874,8 +876,8 @@ namespace RdKafka.Internal
                     IntPtr rkt,
                     int partition,
                     IntPtr msgflags,
-                    byte[] payload, UIntPtr len,
-                    byte[] key, UIntPtr keylen,
+                    IntPtr payload, UIntPtr len,
+                    IntPtr key, UIntPtr keylen,
                     IntPtr msg_opaque);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

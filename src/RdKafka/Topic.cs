@@ -38,12 +38,12 @@ namespace RdKafka
                     byte[] key = null;
                     if (keydata != IntPtr.Zero)
                     {
-                        key = new byte[(int) keylen];
-                        Marshal.Copy(keydata, key, 0, (int) keylen);
+                        key = new byte[(int)keylen];
+                        Marshal.Copy(keydata, key, 0, (int)keylen);
                     }
                     return config.CustomPartitioner(this, key, partition_cnt);
                 };
-                LibRdKafka.topic_conf_set_partitioner_cb(configPtr, PartitionerDelegate);
+                //LibRdKafka.topic_conf_set_partitioner_cb(configPtr, PartitionerDelegate);
             }
 
             handle = kafkaHandle.Topic(topic, configPtr);
@@ -58,6 +58,12 @@ namespace RdKafka
 
         public Task<DeliveryReport> Produce(byte[] payload, byte[] key = null, Int32 partition = RD_KAFKA_PARTITION_UA)
         {
+            return Produce(payload, 0, payload.Length, key, 0, key.Length, partition);
+        }
+
+        public Task<DeliveryReport> Produce(byte[] payload, int payloadOffset, int payloadCount, byte[] key = null, int keyOffset = 0, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA)
+        {
+
             // Passes the TaskCompletionSource to the delivery report callback
             // via the msg_opaque pointer
             var deliveryCompletionSource = new TaskCompletionSource<DeliveryReport>();
@@ -65,7 +71,7 @@ namespace RdKafka
 
             while (true)
             {
-                if (handle.Produce(payload, key, partition, GCHandle.ToIntPtr(gch)) == 0)
+                if (Produce(payload, payloadOffset, payloadCount, key, keyOffset, keyCount, partition, GCHandle.ToIntPtr(gch), true) == 0)
                 {
                     // Successfully enqueued produce request
                     break;
@@ -85,6 +91,14 @@ namespace RdKafka
             }
 
             return deliveryCompletionSource.Task;
+        }
+
+        public ErrorCode Produce(byte[] payload, int payloadOffset, int payloadCount, byte[] key, int keyOffset, int keyCount, Int32 partition, IntPtr opaque, bool copyBuffer)
+        {
+            long retVal = handle.Produce(payload, payloadOffset, payloadCount, key, keyOffset, keyCount, partition, opaque, copyBuffer);
+            if (retVal == 0)
+                return ErrorCode.NO_ERROR;
+            return LibRdKafka.last_error();
         }
 
         /// <summary>

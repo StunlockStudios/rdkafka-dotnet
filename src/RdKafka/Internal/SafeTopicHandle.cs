@@ -27,14 +27,14 @@ namespace RdKafka.Internal
 
         internal string GetName() => Marshal.PtrToStringAnsi(LibRdKafka.topic_name(handle));
 
-        internal long Produce(byte[] payload, byte[] key, int partition, IntPtr opaque)
+        internal long Produce(byte[] payload, int payloadOffset, int payloadCount, byte[] key, int keyOffset, int keyCount, int partition, IntPtr opaque, bool copyBuffer)
         {
             return (long) LibRdKafka.produce(
                     handle,
                     partition,
-                    (IntPtr) MsgFlags.MSG_F_COPY,
-                    payload, (UIntPtr) (payload?.Length ?? 0),
-                    key, (UIntPtr) (key?.Length ?? 0),
+                    (IntPtr) (copyBuffer ? MsgFlags.MSG_F_COPY : 0),
+                    payload != null ? Marshal.UnsafeAddrOfPinnedArrayElement(payload, payloadOffset) : IntPtr.Zero, (UIntPtr) payloadCount,
+                    key != null ? Marshal.UnsafeAddrOfPinnedArrayElement(key, keyOffset) : IntPtr.Zero, (UIntPtr) keyCount,
                     opaque);
         }
 
